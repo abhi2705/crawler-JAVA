@@ -7,6 +7,8 @@ import java.util.List;
 import org.json.JSONException;
 import org.json.JSONObject;
 import org.jsoup.Jsoup;
+import org.jsoup.nodes.Element;
+import org.jsoup.nodes.Node;
 import org.jsoup.select.Elements;
 import org.mortbay.util.ajax.JSON;
 
@@ -14,14 +16,15 @@ import org.mortbay.util.ajax.JSON;
 public class DataExtractor {
 	
 	static List<String> revList = new ArrayList<String>();
-	static List<String> dateList = new ArrayList<String>();;
-	static List<String> titleList = new ArrayList<String>();;
+	static List<String> dateList = new ArrayList<String>();
+	static List<String> titleList = new ArrayList<String>();
+	static List<String> starList = new ArrayList<String>();
 	public static void main(String[] args) throws IOException, JSONException
 	{
 		String baseUrl = "http://www.flipkart.com/samsung-galaxy-note-2-n7100/product-reviews/ITMDHM3NUFYRRQKP?pid=MOBDDPH4CUB2Q3FU&rating=1,2,3,4,5&reviewers=all&type=top&sort=most_helpful&start=";
 		String temp;
 		//System.out.println(baseUrl);
-		int i=420;
+		int i=0;
 
 		JSONObject obj = new JSONObject();
 		while(true)
@@ -38,35 +41,52 @@ public class DataExtractor {
 				i=i+10;
 			}
 		
+
+		obj.put("RatingStars-List", starList);
 		obj.put("Reviews", revList);
 		obj.put("Review-Date", dateList);
 		obj.put("Review-Title", titleList);
 		
-		PrintWriter writerjson = new PrintWriter(new FileWriter("note2-JSON.json", true));
+		
+		
+		PrintWriter writerjson = new PrintWriter(new FileWriter("Note2-JSONData.json", true));
 		writerjson.println(obj);
 		writerjson.close();
+		
+		System.out.println(obj.get("Review-Date"));
 	}
 	
 	
 	public static String DataFunnel(String link) {
 	    org.jsoup.nodes.Document doc;
-	    String reviews = null;
+	    Elements reviews = null;
 	    //String urlNextPage = new String();
 	    try {
 	    	PrintWriter writer = new PrintWriter(new FileWriter("note2.txt", true));
 	        
 	    	// need http protocol
 	        doc = Jsoup.connect(link).timeout(25000).get();
-	        reviews = doc.select("span[class=review-text]").text();
-	        String date = doc.select("div[class=date line fk-font-small]").text();
-	        String reviewHeading = doc.select("div[class=line fk-font-normal bmargin5 dark-gray]").text();
+	        reviews = doc.select("span[class=review-text]");
+	        Elements date = doc.select("div[class=date line fk-font-small]");
+	        Elements reviewHeading = doc.select("div[class=line fk-font-normal bmargin5 dark-gray]");
 	        String title = doc.title();
+	        Elements s = doc.select("div[class=fk-stars]");
+	        Element tempelement;
+	        for(int i = 0;i<s.size();i++)
+	        {
+	            tempelement = s.get(i);
+	            starList.add(tempelement.attr("title").replaceAll(" stars", ""));
+	            dateList.add(((Element) date.toArray()[i]).text());
+	            revList.add(((Element) reviews.toArray()[i]).text());
+	            titleList.add(((Element) reviewHeading.toArray()[i]).text());
+	        }
 	        
 	        
-	        revList.add(reviews);
-	        dateList.add(date);
-	        titleList.add(reviewHeading);
-	        
+//	        System.out.println("-----------------------Star Lists --------" + starList);
+//	        
+//	        Elements datess = doc.select("div[class=date line fk-font-small]");
+//	        dateList.add(((Element) datess.toArray()[2]).text());
+//	        System.out.println(((Element) datess.toArray()[2]).text());
 	        
 	        //System.out.println("-----------------------Reviews --------" + reviews);
 	        //System.out.println("-----------------------Date --------" + date);
